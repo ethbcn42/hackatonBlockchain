@@ -1,5 +1,4 @@
-//SPDX-License-Identifier: GPL-3.0
-
+//SPDX-License-Identifier: MIT                                                                                                 
 /* ***************************************************************************************************/                                     
 /*                                                          dddddddd                                 */
 /* KKKKKKKKK    KKKKKKK  iiii                               d::::::dlllllll                          */
@@ -27,84 +26,73 @@
 
 pragma solidity ^0.8.0;
 
-contract Proxy {
+/**
+ * @dev Interface to verify ONG on the factory
+ */
+interface IFactory {
+    function verifyProof(bytes32[] calldata _merkleProof) external view returns (bool);
+}
 
-    event LogicContractChanged(address _newImplementation);
+contract Particular {
 
-    event AdminChanged(address _newAdmin);
+    address public admin;
+    uint256 public percent;
+    address public ong;
+    address public factory;
+    address public wallet;
 
-    //address where the proxy will make the delegatecall
-    bytes32 private constant logic_contract = keccak256("proxy.logic");
-    
-    bytes32 private constant proxy_admin = keccak256("proxy.admin");
-    
+constructor (address _admin, uint256 _percent, address _ong, address _factory, address _wallet) {
+    admin = _admin;
+    percent = _percent;
+    ong = _ong;
+    factory = _factory;
+    wallet = _wallet;
+}
+/**
+ * @dev splitts the money automaticly between the ONG and the wallet which will receive the rest
+ */
+receive() external payable {
+    uint256 tocharity = msg.value * percent / 100;
+    uint256 towallet = msg.value - tocharity;
+    (bool success, ) = ong.call{value: tocharity}("");
+    require(success, "Error: money could not be sended to ONG");
+    (success, ) = wallet.call{value: towallet}("");
+    require(success, "Error: money could not be sended to wallet");
+}
+/**
+ * @dev setters
+ */
+function setAdmin(address _admin) virtual public onlyAdmin {
+    require(admin != _admin, "Error, admin already setted");
+    admin = _admin;
+}
 
-    constructor(address _logic_contract, address _admin, bytes32 _seed) {
-       bytes32 position = proxy_admin;
-       address admin = msg.sender;
-       assembly{
-           sstore(position, admin)
-       }
-       position = logic_contract;
-       assembly{
-           sstore(position, _logic_contract)
-       }
-       (bool success, ) = _logic_contract.delegatecall(abi.encodeWithSignature("initialize(address,bytes32)", _admin, _seed));
-    }
-    /**
-     * @dev Setters
-     */
-    function setLogicContract(address _logicAddress) public onlyProxyAdmin {   
-        bytes32 position = logic_contract;   
-        assembly {
-            sstore(position, _logicAddress)
-        } 
-        emit LogicContractChanged(_logicAddress);
-    } 
-    function setProxyAdmin(address _newAdmin) public onlyProxyAdmin  {
-        bytes32 position = proxy_admin;   
-        assembly {
-            sstore(position, _newAdmin)
-        } 
-        emit AdminChanged(_newAdmin);
-    }
-    /**
-     * @dev Getter for the logic contract address
-     */
-    function implementation() public view returns(address impl) {   
-        bytes32 position = logic_contract;   
-        assembly {
-            impl := sload(position)
-        } 
-    } 
-    /**
-     * @dev Getter for the proxy admin address
-     */
-    function proxyAdmin() public view returns(address admin) {   
-        bytes32 position = proxy_admin;   
-        assembly {
-            admin := sload(position)
-        } 
-    }
+function setONG(address _ong, bytes32[] calldata _proof) virtual public onlyAdmin {
+    require(ong != _ong, "Error: ong already setted");
+    require(checkVerifyedONG(_proof) == true, "Error: non verified ONG");
+    ong = _ong;
+}
 
-    fallback() external payable {
-        bytes32 position = logic_contract;
-    assembly {
-      let _target := sload(position)
-      calldatacopy(0x0, 0x0, calldatasize())
-      let result := delegatecall(gas(), _target, 0x0, calldatasize(), 0x0, 0)
-      returndatacopy(0x0, 0x0, returndatasize())
-      switch result 
-      case 0 {revert(0, returndatasize())} 
-      default {return (0, returndatasize())}
-        }
-    }
-    /**
-    * @dev only the admin is allowed to call the functions that implement this modifier
-    */
-    modifier onlyProxyAdmin {
-        require(proxyAdmin() == msg.sender, "you're not the proxy admin");
-        _;
-    }
-    
+function setPercent(uint256 _percent) virtual public onlyAdmin {
+    require(_percent != percent, "Error: same percent");
+    percent = _percent;
+}
+
+function setWallet(address _wallet) virtual public onlyAdmin {
+    require(wallet != _wallet, "Error: wallet already setted");
+    wallet = _wallet;
+}
+/**
+ * @dev check if the ONG is verifyed on the factory
+ */
+function checkVerifyedONG(bytes32[] calldata _proof) public view returns (bool) {
+    bool success = IFactory(factory).verifyProof(_proof);
+    require(success, "Error: not verified ONG");
+    return success;
+}
+
+modifier onlyAdmin {
+    require(admin == msg.sender, "Error, only admin can call this function");
+    _;
+}
 }

@@ -14,14 +14,14 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const Logic = await hre.ethers.getContractFactory("YOUR_LOGIC_CONTRACT_NAME");
+  const Logic = await hre.ethers.getContractFactory("Factory");
   const Proxy = await hre.ethers.getContractFactory("Proxy");
 
   const logic = await Logic.deploy();
   await logic.deployed();
   console.log("Logic deployed to:", logic.address);
 
-  const proxy = await Proxy.deploy(logic.address);
+  const proxy = await Proxy.deploy(logic.address, "0xF410D6069f76F3ccF035D397E28dF3E90A82885D", "0x4abc2edb296e6b3e26bf35d8f3839102aed2c6f4656386482459f8b9bcc166c4");
   await proxy.deployed();
   console.log("Proxy deployed (and initialized) to:", proxy.address);
 }
