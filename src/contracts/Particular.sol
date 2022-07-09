@@ -27,7 +27,7 @@
 pragma solidity ^0.8.0;
 
 /**
- * @dev Interface to verify ONG on the factory
+ * @dev Interface to verify ONG address on the factory
  */
 interface IFactory {
     function verifyProof(bytes32[] calldata _merkleProof) external view returns (bool);
@@ -40,6 +40,8 @@ contract Particular {
     address public ong;
     address public factory;
     address public wallet;
+
+    event Donation(address indexed from, address indexed to, uint256 amount);
 
 constructor (address _admin, uint256 _percent, address _ong, address _factory, address _wallet) {
     admin = _admin;
@@ -58,6 +60,7 @@ receive() external payable {
     require(success, "Error: money could not be sended to ONG");
     (success, ) = wallet.call{value: towallet}("");
     require(success, "Error: money could not be sended to wallet");
+    emit Donation(admin, ong, tocharity);
 }
 /**
  * @dev setters

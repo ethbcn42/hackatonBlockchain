@@ -34,7 +34,6 @@ contract Factory is Initializable {
 
     address public admin;
     bytes32 public seed;
-    Particular public particular;
     mapping(address => Particular) public Registry;
 
 /**
@@ -45,10 +44,10 @@ function initialize(address _admin, bytes32 _seed) virtual public initializer {
     seed = _seed;
 }
 /**
- * @dev Create a new Particular contract.
+ * @dev Create a new Particular contract for a user
  */
 function createParticular(uint256 _percent, address _ong, address _wallet) virtual public {
-    particular = new Particular(msg.sender, _percent, _ong, address(this), _wallet);
+    Particular particular = new Particular(msg.sender, _percent, _ong, address(this), _wallet);
     Registry[msg.sender] = particular;
 }
 /**
