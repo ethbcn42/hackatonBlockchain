@@ -30,7 +30,7 @@ pragma solidity ^0.8.0;
  * @dev Interface to verify ONG address on the factory
  */
 interface IFactory {
-    function verifyProof(bytes32[] calldata _merkleProof) external view returns (bool);
+    function verifyProof(bytes32[] calldata _merkleProof, address _wallet) external view returns (bool);
 }
 
 contract Particular {
@@ -41,7 +41,7 @@ contract Particular {
     address public factory;
     address public wallet;
 
-    event Donation(address indexed from, address indexed to, uint256 amount);
+    event Transaction(address indexed from, address indexed to, uint256 amount, uint256 remaining);
 
 constructor (address _admin, uint256 _percent, address _ong, address _factory, address _wallet) {
     admin = _admin;
@@ -60,7 +60,7 @@ receive() external payable {
     require(success, "Error: money could not be sended to ONG");
     (success, ) = wallet.call{value: towallet}("");
     require(success, "Error: money could not be sended to wallet");
-    emit Donation(admin, ong, tocharity);
+    emit Transaction(admin, ong, tocharity, towallet);
 }
 /**
  * @dev setters
@@ -72,7 +72,7 @@ function setAdmin(address _admin) virtual public onlyAdmin {
 
 function setONG(address _ong, bytes32[] calldata _proof) virtual public onlyAdmin {
     require(ong != _ong, "Error: ong already setted");
-    require(checkVerifyedONG(_proof) == true, "Error: non verified ONG");
+    require(checkVerifyedONG(_proof, _ong) == true, "Error: non verified ONG");
     ong = _ong;
 }
 
@@ -88,10 +88,9 @@ function setWallet(address _wallet) virtual public onlyAdmin {
 /**
  * @dev check if the ONG is verifyed on the factory
  */
-function checkVerifyedONG(bytes32[] calldata _proof) public view returns (bool) {
-    bool success = IFactory(factory).verifyProof(_proof);
-    require(success, "Error: not verified ONG");
-    return success;
+function checkVerifyedONG(bytes32[] calldata _proof, address _ong) public view returns (bool) {
+    IFactory _factory = IFactory(factory);
+    return (_factory.verifyProof(_proof, _ong));
 }
 
 modifier onlyAdmin {

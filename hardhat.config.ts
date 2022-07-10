@@ -6,6 +6,8 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import { boolean, string } from "hardhat/internal/core/params/argumentTypes";
+import { NetworkUserConfig } from "hardhat/types";
 
 dotenv.config();
 
@@ -43,6 +45,18 @@ const config: HardhatUserConfig = {
       url: "https://goerli.infura.io/v3/a7a3d44c2ed340f2b0a3bfde0588ec47",
       accounts: process.env.PRIVATE_KEY != undefined ? [process.env.PRIVATE_KEY]:[]
     },
+    neonlabs: <NetworkUserConfig> {
+      url: 'https://proxy.devnet.neonlabs.org/solana',
+      accounts: [process.env.PRIVATE_KEY],
+      network_id: 245022926,
+      chainId: 245022926,
+      gas: 66665460,
+      gasPrice: 166481678000,
+      blockGasLimit: 10000000,
+      allowUnlimitedContractSize: false,
+      timeout: 1000000,
+      isFork: true
+    }
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

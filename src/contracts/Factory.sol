@@ -67,8 +67,8 @@ function setSeed(bytes32 _seed) virtual public onlyAdmin {
 /**
  * @dev verify ONG address on a merkle seed
  */ 
-function verifyProof(bytes32[] calldata _merkleProof) virtual public view returns (bool) {
-    return (MerkleProofUpgradeable.verify(_merkleProof, seed, keccak256(abi.encodePacked(msg.sender))));
+function verifyProof(bytes32[] calldata _merkleProof, address _wallet) virtual external view returns (bool) {
+    return (MerkleProofUpgradeable.verify(_merkleProof, seed, keccak256(abi.encodePacked(_wallet))));
 }
 
 modifier onlyAdmin {
